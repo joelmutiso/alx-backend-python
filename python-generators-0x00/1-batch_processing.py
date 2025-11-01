@@ -56,7 +56,6 @@ def stream_users_in_batches(batch_size=1000):
         if connection:
             connection.close()
     
-    # Explicitly add return to satisfy the checker
     return
 
 
@@ -75,5 +74,4 @@ def batch_processing(batch_size):
                 # The main script expects this to be printed
                 print(user)
     
-    # Explicitly add return to satisfy the checker
     return

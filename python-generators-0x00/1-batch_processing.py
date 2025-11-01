@@ -24,21 +24,17 @@ def stream_users_in_batches(batch_size=1000):
             database=DB_NAME
         )
         
-        # Use a buffered, dictionary cursor
         cursor = connection.cursor(dictionary=True, buffered=True)
-        
         query = "SELECT user_id, name, email, age FROM user_data"
         cursor.execute(query)
         
         batch = []
-        # --- LOOP 1: Iterates over all rows in the database ---
         for row in cursor:
             batch.append(row)
             if len(batch) == batch_size:
                 yield batch
-                batch = []  # Reset the batch
+                batch = []
         
-        # Yield any remaining users in the last batch
         if batch:
             yield batch
             
@@ -50,7 +46,6 @@ def stream_users_in_batches(batch_size=1000):
         else:
             print(f"Error while streaming: {e}")
     finally:
-        # Ensure resources are closed
         if cursor:
             cursor.close()
         if connection:
@@ -60,14 +55,9 @@ def stream_users_in_batches(batch_size=1000):
 def batch_processing(batch_size):
     """
     Fetches user batches and processes them.
-    Filters users to find those over 25 and prints them.
+    Filters users to find those over 25 and yields them.
     """
-    # --- LOOP 2: Iterates over the batches (lists) from the generator ---
     for batch in stream_users_in_batches(batch_size):
-        
-        # --- LOOP 3: Iterates over users (dictionaries) in a single batch ---
         for user in batch:
-            # Process: filter users over the age of 25
             if user['age'] > 25:
-                # The main script expects this to be printed
-                print(user)
+                yield user

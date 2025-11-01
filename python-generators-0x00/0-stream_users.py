@@ -1,37 +1,54 @@
-from seed import connect_to_prodev
 import mysql.connector
+from mysql.connector import Error, errorcode
+import os
+
+# Get credentials from environment variables
+DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_USER = os.getenv('DB_USER', 'root')
+DB_PASS = os.getenv('DB_PASS', '')
+DB_NAME = 'ALX_prodev'
+
 
 def stream_users():
     """
-    Fetches rows one by one from the user_data table.
-    Yields each row as a dictionary.
+    A generator that connects to the user_data table
+    and yields rows one by one as dictionaries.
     """
     connection = None
     cursor = None
     try:
-        connection = connect_to_prodev()
-        if connection is None:
-            print("Could not connect to database.")
-            return
-
-        # The key: dictionary=True makes the cursor return
-        # dicts instead of tuples, matching the main file's output.
-        cursor = connection.cursor(dictionary=True)
+        # Connect to the database
+        connection = mysql.connector.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASS,
+            database=DB_NAME
+        )
         
-        query = "SELECT * FROM user_data;"
+        # Add buffered=True to fetch all results at once
+        # This prevents the "Unread result" error when islice stops early
+        cursor = connection.cursor(dictionary=True, buffered=True)
+        
+        # Define the query
+        query = "SELECT user_id, name, email, age FROM user_data"
+        
+        # Execute the query
         cursor.execute(query)
-
-        # This is the single loop.
-        # The cursor itself is an iterator. It fetches
-        # rows from the database one by one as the loop asks.
+        
+        # Iterate over the buffered results
         for row in cursor:
             yield row
-
-    except mysql.connector.Error as e:
-        print(f"Database Error: {e}")
+            
+    except Error as e:
+        # Handle potential errors
+        if e.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif e.errno == errorcode.ER_BAD_DB_ERROR:
+            print(f"Database {DB_NAME} does not exist")
+        else:
+            print(f"Error while streaming: {e}")
     finally:
-        # This part is crucial!
-        # It ensures the connection is closed no matter what.
+        # This block is crucial.
         if cursor:
             cursor.close()
         if connection:

@@ -2,6 +2,7 @@ import mysql.connector
 from mysql.connector import Error, errorcode
 import os
 import csv
+import uuid 
 
 # --- Database Credentials ---
 DB_HOST = os.getenv('DB_HOST', 'localhost')
@@ -20,10 +21,8 @@ def connect_db():
         )
         return connection
     except Error as e:
-        # Check for specific access denied error
         if e.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             print("Something is wrong with your user name or password")
-            print("Hint: Did you set your $env:DB_PASS in PowerShell?")
         else:
             print(f"Error connecting to MySQL server: {e}")
         return None
@@ -77,7 +76,10 @@ def create_table(connection):
 
 
 def insert_data(connection, data_file):
-    """Inserts data from a CSV file if it does not exist."""
+    """
+    Inserts data from a 3-COLUMN CSV file (name, email, age)
+    and generates a UUID for the user_id.
+    """
     try:
         cursor = connection.cursor()
         
@@ -93,12 +95,17 @@ def insert_data(connection, data_file):
             
             for row in csv_reader:
                 try:
-                    # This checks that the row is not empty
-                    # and builds a tuple of exactly 4 items
                     if row: 
-                        data_to_insert.append((row[0], row[1], row[2], int(row[3])))
+                        # row[0] is name, row[1] is email, row[2] is age
+                        user_id = str(uuid.uuid4()) # Generate the missing user_id
+                        name = row[0]
+                        email = row[1]
+                        age = int(row[2])
+                        
+                        # Add the 4-column tuple
+                        data_to_insert.append((user_id, name, email, age))
                 except (ValueError, IndexError):
-                    # Catches rows that are too short or have a non-number for age
+                    # This will catch rows with missing age, etc.
                     print(f"Skipping malformed row: {row}")
 
         if data_to_insert:
@@ -109,7 +116,7 @@ def insert_data(connection, data_file):
 
     except Error as e:
         print(f"Error inserting data: {e}")
-        connection.rollback() # Good practice to undo changes on error
+        connection.rollback()
     except FileNotFoundError:
         print(f"Error: The file {data_file} was not found.")
     except Exception as e:

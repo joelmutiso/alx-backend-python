@@ -7,9 +7,9 @@ def with_db_connection(func):
     def wrapper(*args, **kwargs):
         conn = sqlite3.connect("users.db") 
         try:
-            result = func(conn, *args, **kwargs) # pass conn to wrapped function
+            result = func(conn, *args, **kwargs)
         finally:
-            conn.close() # ensure connection is always closed
+            conn.close() 
         return result
     return wrapper
 

@@ -83,3 +83,20 @@ class TestGithubOrgClient(unittest.TestCase):
             self.assertEqual(result, expected_repos)
             mock_public_repos_url.assert_called_once()
             mock_get_json.assert_called_once_with(fake_url)
+
+    @parameterized.expand([
+        ({"license": {"key": "my_license"}}, "my_license", True),
+        ({"license": {"key": "other_license"}}, "my_license", False),
+    ])
+    def test_has_license(self,
+                           repo: Dict,
+                           license_key: str,
+                           expected: bool) -> None:
+        """
+        Test the has_license static method with parameterized inputs.
+        """
+        # 1. ACT
+        result = GithubOrgClient.has_license(repo, license_key)
+
+        # 2. ASSERT
+        self.assertEqual(result, expected)

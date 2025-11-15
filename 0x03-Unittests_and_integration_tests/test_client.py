@@ -17,12 +17,12 @@ class TestGithubOrgClient(unittest.TestCase):
     """
     Test class for the GithubOrgClient.
     """
+    @patch('client.get_json')
     @parameterized.expand([
         ("google",),
         ("abc",)
     ])
-    @patch('client.get_json')
-    def test_org(self, org_name: str, mock_get_json: Mock) -> None:
+    def test_org(self, mock_get_json: Mock, org_name: str) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
         """
@@ -121,3 +121,4 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
     def test_public_repos_with_license(self):
         client = GithubOrgClient("google")
+        self.assertEqual(client.public_repos("apache-2.0"), self.apache2_repos)

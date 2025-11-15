@@ -4,10 +4,9 @@ Unit test for client.py
 """
 import unittest
 from unittest.mock import patch, Mock, PropertyMock
-from parameterized import parameterized, parameterized_class
+from parameterized import parameterized
 from client import GithubOrgClient
 from typing import Dict
-from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -73,7 +72,7 @@ class TestGithubOrgClient(unittest.TestCase):
                           '_public_repos_url',
                           new_callable=PropertyMock) as mock_public_repos_url:
 
-            fake_url = "https.fake.url/repos"
+            fake_url = "https://fake.url/repos"
             mock_public_repos_url.return_value = fake_url
 
             # ACT
@@ -96,50 +95,8 @@ class TestGithubOrgClient(unittest.TestCase):
         """
         Test the has_license static method with parameterized inputs.
         """
-        # ACT
+        # 1. ACT
         result = GithubOrgClient.has_license(repo, license_key)
 
-        # ASSERT
+        # 2. ASSERT
         self.assertEqual(result, expected)
-
-
-@parameterized_class(('org_payload', 'repos_payload',
-                      'expected_repos', 'apache2_repos'), [
-    (org_payload, repos_payload, expected_repos, apache2_repos)
-])
-class TestIntegrationGithubOrgClient(unittest.TestCase):
-    """
-    Integration test class for GithubOrgClient.
-    Mocks external HTTP calls using class-level fixtures.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        """
-        Set up the class by patching requests.get.
-        This method is called ONCE before any tests run.
-        """
-        org_url = cls.org_payload["url"]
-        repos_url = cls.org_payload["repos_url"]
-
-        def get_side_effect(url):
-            """
-            Returns a mock response based on the URL.
-            """
-            if url == org_url:
-                return Mock(json=Mock(return_value=cls.org_payload))
-            if url == repos_url:
-                return Mock(json=Mock(return_value=cls.repos_payload))
-            return Mock(json=Mock(return_value=None))
-
-        cls.get_patcher = patch('client.requests.get')
-        cls.mock_get = cls.get_patcher.start()
-        cls.mock_get.side_effect = get_side_effect
-
-    @classmethod
-    def tearDownClass(cls):
-        """
-        Tear down the class by stopping the patcher.
-        This method is called ONCE after all tests run.
-        """
-        cls.get_patcher.stop()

@@ -22,7 +22,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ("google",),
         ("abc",)
     ])
-    def test_org(self, mock_get_json: Mock, org_name: str) -> None:
+    def test_org(self, org_name: str, mock_get_json: Mock) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
         """

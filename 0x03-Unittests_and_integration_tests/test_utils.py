@@ -60,7 +60,6 @@ class TestGetJson(unittest.TestCase):
         Test that get_json returns the expected payload
         by mocking the external HTTP call.
         """
-        # We need to create a Mock object for the response
         mock_response = Mock()
         mock_response.json.return_value = test_payload
         with patch('utils.requests.get',

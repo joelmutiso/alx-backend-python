@@ -83,10 +83,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "my_license"}}, "my_license", True),
         ({"license": {"key": "other_license"}}, "my_license", False),
     ])
-    def test_has_license(self,
-                         repo: Dict,
-                         license_key: str,
-                         expected: bool) -> None:
+    def test_has_license(self, repo: Dict, license_key: str, expected: bool) -> None:
         """
         Test the has_license static method with parameterized inputs.
         """
@@ -119,3 +116,8 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         cls.get_patcher.stop()
 
     def test_public_repos(self):
+        client = GithubOrgClient("google")
+        self.assertEqual(client.public_repos(), self.expected_repos)
+
+    def test_public_repos_with_license(self):
+        client = GithubOrgClient("google")

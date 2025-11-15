@@ -4,9 +4,10 @@ Unit test for client.py
 """
 import unittest
 from unittest.mock import patch, Mock, PropertyMock
-from parameterized import parameterized
+from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
 from typing import Dict
+from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -39,24 +40,19 @@ class TestGithubOrgClient(unittest.TestCase):
         """
         Test the _public_repos_url property by mocking the 'org' property.
         """
-        # 1. ARRANGE: Define the known payload 'org' should return
+        # 1. ARRANGE
         known_payload = {"repos_url": "https://api.github.com/my_test/repos"}
 
-        # 2. ARRANGE & ACT: Patch 'org' as a property
+        # 2. ARRANGE & ACT
         with patch.object(GithubOrgClient,
                           'org',
                           new_callable=PropertyMock) as mock_org:
 
-            # Configure the mock property to return our payload
             mock_org.return_value = known_payload
-
-            # Instantiate the client
             client = GithubOrgClient("test_org")
-
-            # Call the property we are testing.
             result = client._public_repos_url
 
-        # 3. ASSERT: Check that the result is what we expect
+        # 3. ASSERT
         self.assertEqual(result, known_payload["repos_url"])
 
     @patch('client.get_json')
@@ -64,26 +60,25 @@ class TestGithubOrgClient(unittest.TestCase):
         """
         Test public_repos by mocking _public_repos_url and get_json.
         """
-        # 1. ARRANGE: Define our payloads
+        # 1. ARRANGE
         test_repos_payload = [
             {"name": "repo-one", "license": {"key": "mit"}},
             {"name": "repo-two", "license": {"key": "apache"}}
         ]
         expected_repos = ["repo-one", "repo-two"]
 
-        # 2. ARRANGE: Configure the mock from the decorator
+        # 2. ARRANGE
         mock_get_json.return_value = test_repos_payload
 
-        # 3. ARRANGE (Context Manager): Patch the property
+        # 3. ARRANGE (Context Manager)
         with patch.object(GithubOrgClient,
                           '_public_repos_url',
                           new_callable=PropertyMock) as mock_public_repos_url:
 
-            # Configure this mock to return a fake URL.
             fake_url = "https://fake.url/repos"
             mock_public_repos_url.return_value = fake_url
 
-            # 4. ACT: Instantiate and call the method
+            # 4. ACT
             client = GithubOrgClient("test_org")
             result = client.public_repos()
 
@@ -96,16 +91,69 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "my_license"}}, "my_license", True),
         ({"license": {"key": "other_license"}}, "my_license", False),
     ])
-    def test_has_license(
-            self,
-            repo: Dict,
-            license_key: str,
-            expected: bool) -> None:
+    # --- THIS IS THE FIX ---
+    # By renaming 'license_key' to 'key', the line is now
+    # short enough (73 chars) to satisfy all checkers.
+    def test_has_license(self, repo: Dict, key: str, expected: bool) -> None:
         """
         Test the has_license static method with parameterized inputs.
         """
         # 1. ACT
-        result = GithubOrgClient.has_license(repo, license_key)
+        # Use the new argument name 'key' here
+        result = GithubOrgClient.has_license(repo, key)
 
         # 2. ASSERT
         self.assertEqual(result, expected)
+
+
+@parameterized_class(('org_payload', 'repos_payload',
+                      'expected_repos', 'apache2_repos'), [
+    (org_payload, repos_payload, expected_repos, apache2_repos)
+])
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """
+    Integration test class for GithubOrgClient.
+    Mocks external HTTP calls using class-level fixtures.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Set up the class by patching requests.get.
+        This method is called ONCE before any tests run.
+        """
+        # Define the URLs we expect to be called based on the fixtures
+        org_url = cls.org_payload["url"]
+        repos_url = cls.org_payload["repos_url"]
+
+        # Define a side_effect function. This function will be called
+        # INSTEAD of the real `requests.get`
+        def get_side_effect(url):
+            """
+            Returns a mock response based on the URL.
+            """
+            if url == org_url:
+                # Return a mock response with a .json() method
+                return Mock(json=Mock(return_value=cls.org_payload))
+            if url == repos_url:
+                # Return a mock response with a .json() method
+                return Mock(json=Mock(return_value=cls.repos_payload))
+            # If the URL is anything else, return an empty mock
+            return Mock(json=Mock(return_value=None))
+
+        # Start the patcher for 'requests.get'
+        cls.get_patcher = patch('client.requests.get')
+        
+        # Start the patcher and get the mock object
+        cls.mock_get = cls.get_patcher.start()
+        
+        # Configure the mock to use our side_effect function
+        cls.mock_get.side_effect = get_side_effect
+
+    @classmethod
+    def tearDownClass(cls):
+        """
+        Tear down the class by stopping the patcher.
+        This method is called ONCE after all tests run.
+        """
+        cls.get_patcher.stop()

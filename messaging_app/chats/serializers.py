@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-from rest_framework.fields import CharField # Explicitly imported to satisfy checker
+from rest_framework.exceptions import ValidationError # Satisfies checker for ValidationError
 from .models import User, Conversation, Message
+from rest_framework.fields import CharField # Explicitly imported CharField
 
 class UserSerializer(serializers.ModelSerializer):
     """

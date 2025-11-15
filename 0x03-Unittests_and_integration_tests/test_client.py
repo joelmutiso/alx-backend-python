@@ -4,7 +4,7 @@ Unit test for client.py
 """
 import unittest
 from unittest.mock import patch, Mock, PropertyMock
-from parameterized import parameterized_class
+from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
 from typing import Dict
 from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
@@ -103,12 +103,10 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, expected)
 
 
-@parameterized_class([{
-    "org_payload": org_payload,
-    "repos_payload": repos_payload,
-    "expected_repos": expected_repos,
-    "apache2_repos": apache2_repos
-}])
+@parameterized_class(
+    ('org_payload', 'repos_payload', 'expected_repos', 'apache2_repos'),
+    TEST_PAYLOAD
+)
 class TestIntegrationGithubOrgClient(unittest.TestCase):
 
     @classmethod

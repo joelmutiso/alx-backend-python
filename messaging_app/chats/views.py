@@ -1,5 +1,6 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.exceptions import PermissionDenied
+from django_filters import rest_framework as filters
 from .models import User, Conversation, Message
 from .serializers import UserSerializer, ConversationSerializer, MessageSerializer
 
@@ -38,6 +39,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
             participants.append(self.request.user)
             
         serializer.save(participants=participants)
+        
 
 class MessageViewSet(viewsets.ModelViewSet):
     """
@@ -45,6 +47,9 @@ class MessageViewSet(viewsets.ModelViewSet):
     """
     serializer_class = MessageSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ('conversation',)
 
     def get_queryset(self):
         """
@@ -59,8 +64,8 @@ class MessageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """
         This is called when a new message is sent.
-        1.  We set the 'sender' to the authenticated user (for security).
-        2.  We check if the user is a participant in the conversation.
+        We set the 'sender' to the authenticated user and
+        check if the user is a participant in the conversation.
         """
         user = self.request.user
         conversation = serializer.validated_data['conversation']

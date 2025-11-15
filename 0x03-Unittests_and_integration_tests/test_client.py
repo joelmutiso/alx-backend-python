@@ -13,7 +13,6 @@ class TestGithubOrgClient(unittest.TestCase):
     """
     Test class for the GithubOrgClient.
     """
-
     @parameterized.expand([
         ("google",),
         ("abc",)
@@ -44,11 +43,10 @@ class TestGithubOrgClient(unittest.TestCase):
         known_payload = {"repos_url": "https://api.github.com/my_test/repos"}
 
         # ARRANGE & ACT
-        with patch.object(
-            GithubOrgClient,
-            'org',
-            new_callable=PropertyMock
-        ) as mock_org:
+        with patch.object(GithubOrgClient,
+                          'org',
+                          new_callable=PropertyMock) as mock_org:
+
             mock_org.return_value = known_payload
             client = GithubOrgClient("test_org")
             result = client._public_repos_url
@@ -70,11 +68,10 @@ class TestGithubOrgClient(unittest.TestCase):
 
         mock_get_json.return_value = test_repos_payload
 
-        with patch.object(
-            GithubOrgClient,
-            '_public_repos_url',
-            new_callable=PropertyMock
-        ) as mock_public_repos_url:
+        with patch.object(GithubOrgClient,
+                          '_public_repos_url',
+                          new_callable=PropertyMock) as mock_public_repos_url:
+
             fake_url = "https://fake.url/repos"
             mock_public_repos_url.return_value = fake_url
 
@@ -91,12 +88,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "my_license"}}, "my_license", True),
         ({"license": {"key": "other_license"}}, "my_license", False),
     ])
-    def test_has_license(
-        self,
-        repo: Dict,
-        license_key: str,
-        expected: bool
-    ) -> None:
+    def test_has_license(self, repo: Dict, license_key: str, expected: bool) -> None:
         """
         Test the has_license static method with parameterized inputs.
         """

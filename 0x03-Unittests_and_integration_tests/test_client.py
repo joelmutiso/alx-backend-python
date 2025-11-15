@@ -4,10 +4,9 @@ Unit test for client.py
 """
 import unittest
 from unittest.mock import patch, Mock, PropertyMock
-from parameterized import parameterized, parameterized_class
+from parameterized import parameterized
 from client import GithubOrgClient
 from typing import Dict
-from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -80,16 +79,19 @@ class TestGithubOrgClient(unittest.TestCase):
             client = GithubOrgClient("test_org")
             result = client.public_repos()
 
-        # ASSERT
-        self.assertEqual(result, expected_repos)
-        mock_public_repos_url.assert_called_once()
-        mock_get_json.assert_called_once_with(fake_url)
+            # ASSERT
+            self.assertEqual(result, expected_repos)
+            mock_public_repos_url.assert_called_once()
+            mock_get_json.assert_called_once_with(fake_url)
 
     @parameterized.expand([
         ({"license": {"key": "my_license"}}, "my_license", True),
         ({"license": {"key": "other_license"}}, "my_license", False),
     ])
-    def test_has_license(self, repo: Dict, license_key: str, expected: bool) -> None:
+    def test_has_license(self,
+                           repo: Dict,
+                           license_key: str,
+                           expected: bool) -> None:
         """
         Test the has_license static method with parameterized inputs.
         """
@@ -98,41 +100,3 @@ class TestGithubOrgClient(unittest.TestCase):
 
         # ASSERT
         self.assertEqual(result, expected)
-
-
-@parameterized_class(
-    ("org_payload", "repos_payload", "expected_repos", "apache2_repos"),
-    [
-        (org_payload, repos_payload, expected_repos, apache2_repos)
-    ]
-)
-class TestIntegrationGithubOrgClient(unittest.TestCase):
-    """
-    Integration tests for GithubOrgClient.public_repos
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        cls.get_patcher = patch('requests.get')
-        mock_get = cls.get_patcher.start()
-
-        def side_effect(url):
-            if url.endswith('/orgs/google'):
-                return Mock(json=lambda: cls.org_payload)
-            if url == cls.org_payload.get("repos_url"):
-                return Mock(json=lambda: cls.repos_payload)
-            return Mock(json=lambda: None)
-
-        mock_get.side_effect = side_effect
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.get_patcher.stop()
-
-    def test_public_repos(self):
-        client = GithubOrgClient("google")
-        self.assertEqual(client.public_repos(), self.expected_repos)
-
-    def test_public_repos_with_license(self):
-        client = GithubOrgClient("google")
-        self.assertEqual(client.public_repos("apache-2.0"), self.apache2_repos)

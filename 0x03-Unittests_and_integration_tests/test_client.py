@@ -23,7 +23,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ("abc",)
     ])
     @patch('client.get_json')
-    def test_org(self, org_name: str, mock_get_json: Mock) -> None:
+    def test_org(self, org_name, mock_get_json):
         """
         Test that GithubOrgClient.org returns the correct value.
         """
@@ -35,7 +35,7 @@ class TestGithubOrgClient(unittest.TestCase):
         expected_url = f"https://api.github.com/orgs/{org_name}"
         mock_get_json.assert_called_once_with(expected_url)
 
-    def test_public_repos_url(self) -> None:
+    def test_public_repos_url(self):
         """
         Test the _public_repos_url property by mocking the 'org' property.
         """
@@ -49,7 +49,7 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, known_payload["repos_url"])
 
     @patch('client.get_json')
-    def test_public_repos(self, mock_get_json: Mock) -> None:
+    def test_public_repos(self, mock_get_json):
         """
         Test public_repos by mocking _public_repos_url and get_json.
         """
@@ -74,7 +74,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "my_license"}}, "my_license", True),
         ({"license": {"key": "other_license"}}, "my_license", False),
     ])
-    def test_has_license(self, repo: Dict, license_key: str, expected: bool) -> None:
+    def test_has_license(self, repo, license_key, expected):
         """
         Test the has_license static method with parameterized inputs.
         """
@@ -117,7 +117,3 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
     def test_public_repos_with_license(self):
         client = GithubOrgClient("google")
         self.assertEqual(client.public_repos("apache-2.0"), self.apache2_repos)
-
-
-if __name__ == '__main__':
-    unittest.main()

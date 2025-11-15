@@ -20,7 +20,6 @@ class User(AbstractUser):
     
     email = models.EmailField(unique=True, null=False, blank=False)
     
-    # Overriding first_name and last_name to enforce NOT NULL as per spec
     first_name = models.CharField(max_length=150, null=False, blank=False)
     last_name = models.CharField(max_length=150, null=False, blank=False)
     
@@ -33,7 +32,6 @@ class User(AbstractUser):
         blank=False
     )
     
-    # Adding created_at field as per spec
     created_at = models.DateTimeField(auto_now_add=True)
 
     groups = models.ManyToManyField(
@@ -106,14 +104,15 @@ class Message(models.Model):
     
     message_body = models.TextField(null=False, blank=False)
     
-    # This field is 'sent_at' as per the Message spec
     sent_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['sent_at']
 
     def __str__(self):
+        # pylint: disable=no-member 
         """String representation of the Message model."""
         if self.sender:
             return f"Message from {self.sender.email} at {self.sent_at.strftime('%Y-%m-%d %H:%M')}"
-        return f"Message (sender deleted) at {self.sent_at.strftime('%Y-%m-%d %H:%M')}"
+        else:
+            return f"Message (sender deleted) at {self.sent_at.strftime('%Y-%m-%d %H:%M')}"

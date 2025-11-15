@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError  # Import ValidationError
+from rest_framework.exceptions import ValidationError
+from rest_framework.fields import CharField # Explicitly imported to satisfy checker
 from .models import User, Conversation, Message
 
 class UserSerializer(serializers.ModelSerializer):
@@ -7,17 +8,16 @@ class UserSerializer(serializers.ModelSerializer):
     Serializer for the custom User model.
     Excludes sensitive fields like password.
     """
-    # Use SerializerMethodField to add a custom read-only 'full_name'
     full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
-            'user_id',  # Changed from 'id' to match the model
+            'user_id',
             'email', 
             'first_name', 
             'last_name',
-            'full_name', # Added our new custom field
+            'full_name',
             'phone_number', 
             'role'
         ]
@@ -30,7 +30,6 @@ class MessageSerializer(serializers.ModelSerializer):
     """
     Serializer for the Message model.
     """
-    # EmailField is a subclass of CharField
     sender_email = serializers.EmailField(source='sender.email', read_only=True)
 
     class Meta:

@@ -19,6 +19,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ("abc",)
     ])
     @patch('client.get_json')
+    # This function is short enough for one line
     def test_org(self, org_name: str, mock_get_json: Mock) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
@@ -56,6 +57,7 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, known_payload["repos_url"])
 
     @patch('client.get_json')
+    # This function is short enough for one line
     def test_public_repos(self, mock_get_json: Mock) -> None:
         """
         Test public_repos by mocking _public_repos_url and get_json.
@@ -92,15 +94,19 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "other_license"}}, "my_license", False),
     ])
     # --- THIS IS THE FIX ---
-    # By renaming 'license_key' to 'key', the line is now
-    # short enough (73 chars) to satisfy all checkers.
-    def test_has_license(self, repo: Dict, key: str, expected: bool) -> None:
+    # We use 'license_key' (the original name)
+    # And we use a "hanging indent" to fix pycodestyle
+    def test_has_license(
+            self,
+            repo: Dict,
+            license_key: str,
+            expected: bool) -> None:
         """
         Test the has_license static method with parameterized inputs.
         """
         # 1. ACT
-        # Use the new argument name 'key' here
-        result = GithubOrgClient.has_license(repo, key)
+        # We call the function with the correct argument name
+        result = GithubOrgClient.has_license(repo, license_key)
 
         # 2. ASSERT
         self.assertEqual(result, expected)
@@ -122,32 +128,21 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         Set up the class by patching requests.get.
         This method is called ONCE before any tests run.
         """
-        # Define the URLs we expect to be called based on the fixtures
         org_url = cls.org_payload["url"]
         repos_url = cls.org_payload["repos_url"]
 
-        # Define a side_effect function. This function will be called
-        # INSTEAD of the real `requests.get`
         def get_side_effect(url):
             """
             Returns a mock response based on the URL.
             """
             if url == org_url:
-                # Return a mock response with a .json() method
                 return Mock(json=Mock(return_value=cls.org_payload))
             if url == repos_url:
-                # Return a mock response with a .json() method
                 return Mock(json=Mock(return_value=cls.repos_payload))
-            # If the URL is anything else, return an empty mock
             return Mock(json=Mock(return_value=None))
 
-        # Start the patcher for 'requests.get'
         cls.get_patcher = patch('client.requests.get')
-        
-        # Start the patcher and get the mock object
         cls.mock_get = cls.get_patcher.start()
-        
-        # Configure the mock to use our side_effect function
         cls.mock_get.side_effect = get_side_effect
 
     @classmethod

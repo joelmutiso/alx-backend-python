@@ -18,10 +18,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ("abc",)
     ])
     @patch('client.get_json')
-    def test_org(
-            self,
-            org_name: str,
-            mock_get_json: Mock) -> None:
+    def test_org(self, org_name: str, mock_get_json: Mock) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
         """
@@ -99,10 +96,11 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "my_license"}}, "my_license", True),
         ({"license": {"key": "other_license"}}, "my_license", False),
     ])
-    def test_has_license(self,
-                           repo: Dict,
-                           license_key: str,
-                           expected: bool) -> None:
+    def test_has_license(
+            self,
+            repo: Dict,
+            license_key: str,
+            expected: bool) -> None:
         """
         Test the has_license static method with parameterized inputs.
         """

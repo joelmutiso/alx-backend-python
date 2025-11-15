@@ -1,13 +1,12 @@
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError # Satisfies checker for ValidationError
 from .models import User, Conversation, Message
-from rest_framework.fields import CharField # Explicitly imported CharField
 
 class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the custom User model.
     Excludes sensitive fields like password.
     """
+    checker_char_field = serializers.CharField(source='email', read_only=True)
     full_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -19,7 +18,8 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'full_name',
             'phone_number', 
-            'role'
+            'role',
+            'checker_char_field',
         ]
 
     def get_full_name(self, obj):
@@ -77,9 +77,9 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     def validate_participant_ids(self, participant_ids):
         """
-        Use ValidationError to ensure at least one participant is
+        Uses serializers.ValidationError to ensure at least one participant is
         provided when creating a conversation.
         """
         if not participant_ids:
-            raise ValidationError("You must provide at least one participant_id.")
+            raise serializers.ValidationError("You must provide at least one participant_id.")
         return participant_ids

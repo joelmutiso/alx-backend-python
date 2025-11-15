@@ -107,9 +107,7 @@ class TestGithubOrgClient(unittest.TestCase):
         Test the has_license static method with parameterized inputs.
         """
         # 1. ACT
-        # Call the static method directly from the class
         result = GithubOrgClient.has_license(repo, license_key)
 
         # 2. ASSERT
-        # Check if the result is the expected boolean
         self.assertEqual(result, expected)

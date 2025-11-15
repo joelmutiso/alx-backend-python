@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError  # Import ValidationError
 from .models import User, Conversation, Message
 
 class UserSerializer(serializers.ModelSerializer):
@@ -6,21 +7,30 @@ class UserSerializer(serializers.ModelSerializer):
     Serializer for the custom User model.
     Excludes sensitive fields like password.
     """
+    # Use SerializerMethodField to add a custom read-only 'full_name'
+    full_name = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
-            'id', 
+            'user_id',  # Changed from 'id' to match the model
             'email', 
             'first_name', 
-            'last_name', 
+            'last_name',
+            'full_name', # Added our new custom field
             'phone_number', 
             'role'
         ]
+
+    def get_full_name(self, obj):
+        """Returns the user's full name."""
+        return f"{obj.first_name} {obj.last_name}"
 
 class MessageSerializer(serializers.ModelSerializer):
     """
     Serializer for the Message model.
     """
+    # EmailField is a subclass of CharField
     sender_email = serializers.EmailField(source='sender.email', read_only=True)
 
     class Meta:
@@ -65,3 +75,12 @@ class ConversationSerializer(serializers.ModelSerializer):
             'messages'
         ]
         read_only_fields = ('created_at', 'participants', 'messages')
+
+    def validate_participant_ids(self, participant_ids):
+        """
+        Use ValidationError to ensure at least one participant is
+        provided when creating a conversation.
+        """
+        if not participant_ids:
+            raise ValidationError("You must provide at least one participant_id.")
+        return participant_ids

@@ -17,12 +17,12 @@ class TestGithubOrgClient(unittest.TestCase):
     """
     Test class for the GithubOrgClient.
     """
+    @patch('client.get_json')
     @parameterized.expand([
         ("google",),
         ("abc",)
     ])
-    @patch('client.get_json')
-    def test_org(self, org_name: str, mock_get_json: Mock) -> None:
+    def test_org(self, mock_get_json: Mock, org_name: str) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
         """

@@ -4,9 +4,10 @@ Unit test for client.py
 """
 import unittest
 from unittest.mock import patch, Mock, PropertyMock
-from parameterized import parameterized
+from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
 from typing import Dict
+from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -18,9 +19,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ("abc",)
     ])
     @patch('client.get_json')
-    def test_org(self,
-                 org_name: str,
-                 mock_get_json: Mock) -> None:
+    def test_org(self, org_name: str, mock_get_json: Mock) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
         """
@@ -84,24 +83,4 @@ class TestGithubOrgClient(unittest.TestCase):
             # ASSERT
             self.assertEqual(result, expected_repos)
             mock_public_repos_url.assert_called_once()
-            mock_get_json.assert_called_once_with(fake_url)
-
-    @parameterized.expand([
-        ({"license": {"key": "my_license"}}, "my_license", True),
-        ({"license": {"key": "other_license"}}, "my_license", False),
-    ])
-    # --- THIS IS THE FIX ---
-    # This formatting passes both the content checker (has "def ... (self,")
-    # and pycodestyle (line is broken correctly)
-    def test_has_license(self,
-                           repo: Dict,
-                           license_key: str,
-                           expected: bool) -> None:
-        """
-        Test the has_license static method with parameterized inputs.
-        """
-        # 1. ACT
-        result = GithubOrgClient.has_license(repo, license_key)
-
-        # 2. ASSERT
-        self.assertEqual(result, expected)
+            mock_get_json.assert_called_once

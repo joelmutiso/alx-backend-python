@@ -3,9 +3,19 @@
 
 *.env
 
+
 # Python cache files
 __pycache__/
 *.pyc
 
 # VS Code settings
 .vscode/
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# OS-specific files
+.DS_Store
+Thumbs.db

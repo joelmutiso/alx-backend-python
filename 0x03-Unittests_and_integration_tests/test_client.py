@@ -4,10 +4,9 @@ Unit test for client.py
 """
 import unittest
 from unittest.mock import patch, Mock, PropertyMock
-from parameterized import parameterized, parameterized_class
+from parameterized import parameterized
 from client import GithubOrgClient
 from typing import Dict
-from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -83,4 +82,4 @@ class TestGithubOrgClient(unittest.TestCase):
             # ASSERT
             self.assertEqual(result, expected_repos)
             mock_public_repos_url.assert_called_once()
-            mock_get_json.assert_called_once
+            mock_get_json.assert_called_once_with(fake_url)

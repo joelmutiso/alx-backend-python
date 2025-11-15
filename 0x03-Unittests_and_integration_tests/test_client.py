@@ -7,21 +7,7 @@ from unittest.mock import patch, Mock, PropertyMock
 from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
 from typing import Dict
-
-# Fixtures included directly to avoid ImportError
-org_payload = {
-    "login": "google",
-    "id": 123456,
-    "repos_url": "https://api.github.com/orgs/google/repos"
-}
-
-repos_payload = [
-    {"name": "repo1", "license": {"key": "apache-2.0"}},
-    {"name": "repo2", "license": {"key": "mit"}}
-]
-
-expected_repos = ["repo1", "repo2"]
-apache2_repos = ["repo1"]
+from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 
 TEST_PAYLOAD = [
     (org_payload, repos_payload, expected_repos, apache2_repos)
@@ -71,7 +57,7 @@ class TestGithubOrgClient(unittest.TestCase):
             {"name": "repo-one"},
             {"name": "repo-two"}
         ]
-        expected_repos_local = ["repo-one", "repo-two"]
+        expected_repos = ["repo-one", "repo-two"]
         mock_get_json.return_value = test_repos_payload
         with patch.object(GithubOrgClient,
                           '_public_repos_url',
@@ -80,7 +66,7 @@ class TestGithubOrgClient(unittest.TestCase):
             mock_public_repos_url.return_value = fake_url
             client = GithubOrgClient("test_org")
             result = client.public_repos()
-            self.assertEqual(result, expected_repos_local)
+            self.assertEqual(result, expected_repos)
             mock_public_repos_url.assert_called_once()
             mock_get_json.assert_called_once_with(fake_url)
 
@@ -125,9 +111,11 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         cls.get_patcher.stop()
 
     def test_public_repos(self):
+        """Test that public_repos returns all repository names correctly."""
         client = GithubOrgClient("google")
         self.assertEqual(client.public_repos(), self.expected_repos)
 
     def test_public_repos_with_license(self):
+        """Test that public_repos filters repositories by license correctly."""
         client = GithubOrgClient("google")
         self.assertEqual(client.public_repos("apache-2.0"), self.apache2_repos)

@@ -44,8 +44,10 @@ class TestGithubOrgClient(unittest.TestCase):
         """
         Test the _public_repos_url property by mocking the 'org' property.
         """
+        # ARRANGE
         known_payload = {"repos_url": "https://api.github.com/my_test/repos"}
 
+        # ARRANGE & ACT
         with patch.object(GithubOrgClient,
                           'org',
                           new_callable=PropertyMock) as mock_org:
@@ -53,6 +55,7 @@ class TestGithubOrgClient(unittest.TestCase):
             client = GithubOrgClient("test_org")
             result = client._public_repos_url
 
+        # ASSERT
         self.assertEqual(result, known_payload["repos_url"])
 
     @patch('client.get_json')
@@ -60,6 +63,7 @@ class TestGithubOrgClient(unittest.TestCase):
         """
         Test public_repos by mocking _public_repos_url and get_json.
         """
+        # ARRANGE
         test_repos_payload = [
             {"name": "repo-one"},
             {"name": "repo-two"}
@@ -75,9 +79,11 @@ class TestGithubOrgClient(unittest.TestCase):
             fake_url = "https://fake.url/repos"
             mock_public_repos_url.return_value = fake_url
 
+            # ACT
             client = GithubOrgClient("test_org")
             result = client.public_repos()
 
+            # ASSERT
             self.assertEqual(result, expected_repos)
             mock_public_repos_url.assert_called_once()
             mock_get_json.assert_called_once_with(fake_url)
@@ -90,7 +96,13 @@ class TestGithubOrgClient(unittest.TestCase):
                            repo: Dict,
                            license_key: str,
                            expected: bool) -> None:
+        """
+        Test the has_license static method with parameterized inputs.
+        """
+        # ACT
         result = GithubOrgClient.has_license(repo, license_key)
+
+        # ASSERT
         self.assertEqual(result, expected)
 
 
@@ -99,29 +111,50 @@ class TestGithubOrgClient(unittest.TestCase):
     TEST_PAYLOAD
 )
 class TestIntegrationGithubOrgClient(unittest.TestCase):
-
+    """
+    Integration test class for GithubOrgClient.
+    Mocks external HTTP calls using class-level fixtures.
+    """
     @classmethod
     def setUpClass(cls):
-        cls.get_patcher = patch("requests.get")
+        """
+        Set up the class by patching requests.get.
+        """
+        org_url = cls.org_payload["url"]
+        repos_url = cls.org_payload["repos_url"]
+
+        def get_side_effect(url):
+            """
+            Returns a mock response based on the URL.
+            """
+            if url == org_url:
+                return Mock(json=Mock(return_value=cls.org_payload))
+            if url == repos_url:
+                return Mock(json=Mock(return_value=cls.repos_payload))
+            return Mock(json=Mock(return_value=None))
+
+        # We patch 'client.requests.get' because requests is imported in client.py
+        cls.get_patcher = patch('client.requests.get')
         cls.mock_get = cls.get_patcher.start()
-
-        def side_effect(url):
-            if url.endswith("/orgs/google"):
-                return Mock(json=lambda: cls.org_payload)
-            if url == cls.org_payload["repos_url"]:
-                return Mock(json=lambda: cls.repos_payload)
-            return Mock(json=lambda: None)
-
-        cls.mock_get.side_effect = side_effect
+        cls.mock_get.side_effect = get_side_effect
 
     @classmethod
     def tearDownClass(cls):
+        """
+        Tear down the class by stopping the patcher.
+        """
         cls.get_patcher.stop()
 
     def test_public_repos(self):
+        """
+        Integration test for the public_repos method.
+        """
         client = GithubOrgClient("google")
         self.assertEqual(client.public_repos(), self.expected_repos)
 
     def test_public_repos_with_license(self):
+        """
+        Integration test for public_repos with a license filter.
+        """
         client = GithubOrgClient("google")
         self.assertEqual(client.public_repos("apache-2.0"), self.apache2_repos)

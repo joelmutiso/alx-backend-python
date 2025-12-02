@@ -3,6 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from django_filters import rest_framework as filters
 from .models import User, Conversation, Message
 from .serializers import UserSerializer, ConversationSerializer, MessageSerializer
+from .permissions import IsParticipantOfConversation
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -17,7 +18,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
     A viewset for viewing and creating conversations.
     """
     serializer_class = ConversationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsParticipantOfConversation]
 
     def get_queryset(self):
         """
@@ -46,7 +47,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     A viewset for viewing and creating messages.
     """
     serializer_class = MessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsParticipantOfConversation]
 
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ('conversation',)

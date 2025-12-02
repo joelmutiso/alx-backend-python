@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from django_filters import rest_framework as filters
 from .models import User, Conversation, Message
@@ -19,20 +20,20 @@ class ConversationViewSet(viewsets.ModelViewSet):
     """
     serializer_class = ConversationSerializer
     permission_classes = [IsParticipantOfConversation]
+    
+    # --- Configuration Section ---
+    lookup_field = 'conversation_id'
 
     def get_queryset(self):
         """
-        This view should only return conversations that the
-        currently authenticated user is a participant of.
+        Return conversations where the current user is a participant.
         """
         user = self.request.user
         return user.conversations.all()
 
     def perform_create(self, serializer):
         """
-        This is called when a new conversation is created.
-        We ensure that the authenticated user is always
-        added as a participant.
+        Ensure the authenticated user is added to participants on creation.
         """
         participants = serializer.validated_data.get('participants', [])
         
@@ -40,7 +41,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
             participants.append(self.request.user)
             
         serializer.save(participants=participants)
-        
+
 
 class MessageViewSet(viewsets.ModelViewSet):
     """
@@ -54,26 +55,37 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        This view should only return messages from conversations
-        that the authenticated user is a participant of.
+        Return messages from conversations the user participates in.
         """
         user = self.request.user
         return Message.objects.filter(
             conversation__in=user.conversations.all()
         )
 
+    # --- Message Creation & Security Section ---
+    def create(self, request, *args, **kwargs):
+        """
+        Handle message creation with explicit permission checks.
+        Returns HTTP 403 Forbidden if user is not a participant.
+        """
+        conversation_id = request.data.get('conversation')
+        
+        if conversation_id:
+            try:
+                conversation = Conversation.objects.get(conversation_id=conversation_id)
+                if request.user not in conversation.participants.all():
+                    return Response(
+                        {"detail": "You are not a participant in this conversation."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            except Conversation.DoesNotExist:
+                # Validation handled by serializer
+                pass
+
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         """
-        This is called when a new message is sent.
-        We set the 'sender' to the authenticated user and
-        check if the user is a participant in the conversation.
+        Link the new message to the current user.
         """
-        user = self.request.user
-        conversation = serializer.validated_data['conversation']
-
-        if user not in conversation.participants.all():
-            raise PermissionDenied(
-                "You are not a participant in this conversation."
-            )
-        
-        serializer.save(sender=user)
+        serializer.save(sender=self.request.user)

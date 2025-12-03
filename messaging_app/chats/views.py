@@ -2,11 +2,14 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from django_filters import rest_framework as filters
-from .models import User, Conversation, Message
+from .models import Conversation, Message
 from .serializers import UserSerializer, ConversationSerializer, MessageSerializer
 from .permissions import IsParticipantOfConversation
 from .pagination import MessagePagination
 from .filters import MessageFilter
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """

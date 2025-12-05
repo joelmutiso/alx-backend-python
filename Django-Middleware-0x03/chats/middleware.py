@@ -1,7 +1,10 @@
 import os
+import time
 from datetime import datetime
 from django.conf import settings
 from django.http import HttpResponseForbidden
+from django.http import JsonResponse
+
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
@@ -42,5 +45,43 @@ class RestrictAccessByTimeMiddleware:
             return HttpResponseForbidden("Access to the messaging app is restricted between 6 PM and 9 AM.")
 
         # If time is okay, proceed as normal
+        response = self.get_response(request)
+        return response
+    
+class OffensiveLanguageMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        # Dictionary to store IP request timestamps
+        # Format: { '127.0.0.1': [time1, time2, ...] }
+        self.ip_log = {}
+
+    def __call__(self, request):
+        # Only check rate limit for POST requests (sending messages)
+        if request.method == 'POST':
+            # Get user IP address
+            ip_address = request.META.get('REMOTE_ADDR')
+            current_time = time.time()
+            
+            # Initialize list for new IPs
+            if ip_address not in self.ip_log:
+                self.ip_log[ip_address] = []
+            
+            # Filter out timestamps older than 1 minute (60 seconds)
+            # We keep only requests that happened in the last 60 seconds
+            self.ip_log[ip_address] = [
+                t for t in self.ip_log[ip_address] 
+                if current_time - t < 60
+            ]
+            
+            # Check if limit exceeded (5 messages per minute)
+            if len(self.ip_log[ip_address]) >= 5:
+                return JsonResponse(
+                    {'error': 'Rate limit exceeded. Max 5 messages per minute.'}, 
+                    status=429
+                )
+            
+            # Log the current request
+            self.ip_log[ip_address].append(current_time)
+
         response = self.get_response(request)
         return response

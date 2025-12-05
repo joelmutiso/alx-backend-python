@@ -2,9 +2,7 @@ import os
 import time
 from datetime import datetime
 from django.conf import settings
-from django.http import HttpResponseForbidden
-from django.http import JsonResponse
-
+from django.http import JsonResponse, HttpResponseForbidden
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
@@ -85,3 +83,26 @@ class OffensiveLanguageMiddleware:
 
         response = self.get_response(request)
         return response
+    
+class RolepermissionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Define the roles that are allowed to perform actions
+        allowed_roles = ['admin', 'moderator']
+
+        # We only check permissions if the user is logged in
+        if request.user.is_authenticated:
+            # Get the user's role. 
+            # getattr(obj, 'name', default) is safer than request.user.role 
+            # in case the field is missing.
+            user_role = getattr(request.user, 'role', 'guest')
+
+            # If the user has a role, but it's not in the allowed list -> Block them
+            if user_role not in allowed_roles:
+                return HttpResponseForbidden(
+                    "Access denied: You must be an admin or moderator to perform this action."
+                )
+
+        return self.get_response(request)

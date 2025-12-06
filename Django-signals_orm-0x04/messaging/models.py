@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from .managers import UnreadMessagesManager
 
 class Message(models.Model):
     sender = models.ForeignKey(
@@ -33,6 +34,12 @@ class Message(models.Model):
         on_delete=models.CASCADE, 
         related_name='replies'
     )
+
+    # --- New Field & Manager for Task ---
+    read = models.BooleanField(default=False)  # "Add a read boolean field"
+    
+    objects = models.Manager()      # The default manager
+    unread = UnreadMessagesManager() # The custom manager (satisfies 'unread' requirement)
 
     def __str__(self):
         return f"Message from {self.sender} to {self.receiver}"

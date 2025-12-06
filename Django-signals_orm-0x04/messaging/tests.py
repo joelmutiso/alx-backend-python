@@ -68,3 +68,12 @@ class ThreadedMessageTest(TestCase):
         # 3. Verify relationship
         self.assertEqual(reply.parent_message, parent)
         self.assertIn(reply, parent.replies.all())
+
+def test_unread_manager(self):
+        # Create read and unread messages
+        m1 = Message.objects.create(sender=self.user1, receiver=self.user2, content="Unread", read=False)
+        m2 = Message.objects.create(sender=self.user1, receiver=self.user2, content="Read", read=True)
+        
+        # Test the custom manager
+        unread_count = Message.unread.unread_for_user(self.user2).count()
+        self.assertEqual(unread_count, 1)

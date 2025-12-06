@@ -28,3 +28,18 @@ class MessageEditTest(TestCase):
         history = MessageHistory.objects.filter(message=self.message).first()
         self.assertIsNotNone(history)
         self.assertEqual(history.old_content, "Original Content")
+
+def test_delete_user_cleans_data(self):
+        """Test that deleting a user removes their data"""
+        # Create a user and a message
+        user_to_delete = User.objects.create_user(email='gone@test.com', password='pw')
+        Message.objects.create(sender=user_to_delete, receiver=self.receiver, content="Bye")
+        
+        # Verify message exists
+        self.assertEqual(Message.objects.filter(sender=user_to_delete).count(), 1)
+        
+        # Delete the user
+        user_to_delete.delete()
+        
+        # Verify message is gone (Signal + Cascade should ensure this)
+        self.assertEqual(Message.objects.filter(sender=user_to_delete).count(), 0)

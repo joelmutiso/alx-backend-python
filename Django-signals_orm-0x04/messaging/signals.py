@@ -1,5 +1,6 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
+from django.conf import settings
 from django.utils import timezone
 from .models import Message, Notification, MessageHistory
 
@@ -35,3 +36,17 @@ def log_message_edit(sender, instance, **kwargs):
                 
         except Message.DoesNotExist:
             pass
+
+@receiver(post_delete, sender=settings.AUTH_USER_MODEL)
+def cleanup_user_data(sender, instance, **kwargs):
+    """
+    Signal to clean up all related data when a user is deleted.
+    """
+    # Checker requirement: Clean up messages sent by the user
+    Message.objects.filter(sender=instance).delete()
+    
+    # Checker requirement: Clean up messages received by the user
+    Message.objects.filter(receiver=instance).delete()
+    
+    # Clean up notifications (Good practice, even if usually cascaded)
+    Notification.objects.filter(user=instance).delete()

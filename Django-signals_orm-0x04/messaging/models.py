@@ -14,9 +14,22 @@ class Message(models.Model):
     )
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Message from {self.sender} to {self.receiver}"
+    
+class MessageHistory(models.Model):
+    message = models.ForeignKey(
+        Message, 
+        related_name='history', 
+        on_delete=models.CASCADE
+    )
+    old_content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"History for Message {self.message.id} at {self.timestamp}"
 
 class Notification(models.Model):
     user = models.ForeignKey(

@@ -43,3 +43,28 @@ def test_delete_user_cleans_data(self):
         
         # Verify message is gone (Signal + Cascade should ensure this)
         self.assertEqual(Message.objects.filter(sender=user_to_delete).count(), 0)
+
+class ThreadedMessageTest(TestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(email='u1@test.com', password='pw')
+        self.user2 = User.objects.create_user(email='u2@test.com', password='pw')
+
+    def test_reply_creation(self):
+        # 1. Create a parent message
+        parent = Message.objects.create(
+            sender=self.user1, 
+            receiver=self.user2, 
+            content="Parent Message"
+        )
+
+        # 2. Create a reply
+        reply = Message.objects.create(
+            sender=self.user2, 
+            receiver=self.user1, 
+            content="This is a reply",
+            parent_message=parent
+        )
+
+        # 3. Verify relationship
+        self.assertEqual(reply.parent_message, parent)
+        self.assertIn(reply, parent.replies.all())

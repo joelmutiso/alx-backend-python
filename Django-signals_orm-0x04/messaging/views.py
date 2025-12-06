@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .models import Message
+from django.views.decorators.cache import cache_page
 
 User = get_user_model()
 
@@ -17,6 +18,7 @@ def delete_user(request):
 # --- New Logic for Threaded Conversations ---
 
 @login_required
+@cache_page(60)
 def list_messages(request):
     """
     Fetches all messages, but uses select_related to optimize database access.

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
 
     # Local Apps
     'chats.apps.ChatsConfig',
+    'messaging.apps.MessagingConfig',
 ]
 
 MIDDLEWARE = [

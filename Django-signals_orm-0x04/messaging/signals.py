@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django.utils import timezone
 from .models import Message, Notification, MessageHistory
 
 @receiver(post_save, sender=Message)
@@ -13,23 +14,24 @@ def create_notification(sender, instance, created, **kwargs):
 @receiver(pre_save, sender=Message)
 def log_message_edit(sender, instance, **kwargs):
     """
-    Signal to log old content before a message is updated.
+    Signal to log old content and update timestamps.
     """
-    # Check if the message already exists (has a primary key)
     if instance.pk:
         try:
-            # Fetch the old version from the database
             old_message = Message.objects.get(pk=instance.pk)
             
-            # If the content has changed
+            # If content changed
             if old_message.content != instance.content:
-                # Create a history record with the OLD content
+                # 1. Archive the OLD content
                 MessageHistory.objects.create(
                     message=instance,
                     old_content=old_message.content
                 )
-                # Mark the current instance as edited
+                
+                # 2. Update the Message fields
                 instance.edited = True
+                instance.edited_at = timezone.now()  # Set the timestamp automatically
+                # instance.edited_by must be set by the View calling .save()
                 
         except Message.DoesNotExist:
-            pass # Logic for creating a new message (handled elsewhere)
+            pass

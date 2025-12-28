@@ -115,7 +115,6 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         """
         Set up the class by patching requests.get.
         """
-        # Patching global requests.get as expected by the checker
         cls.get_patcher = patch("requests.get")
         cls.mock_get = cls.get_patcher.start()
 

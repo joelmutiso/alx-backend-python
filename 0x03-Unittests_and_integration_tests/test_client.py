@@ -6,12 +6,12 @@ import unittest
 from unittest.mock import patch, Mock, PropertyMock
 from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
-from typing import Dict
+from typing import Dict, List
 
-# Fixtures included directly to avoid ImportError
 org_payload = {
     "login": "google",
     "id": 123456,
+    "url": "https://api.github.com/orgs/google",
     "repos_url": "https://api.github.com/orgs/google/repos"
 }
 
@@ -37,7 +37,7 @@ class TestGithubOrgClient(unittest.TestCase):
         ("abc",)
     ])
     @patch('client.get_json')
-    def test_org(self, org_name, mock_get_json):
+    def test_org(self, org_name: str, mock_get_json: Mock) -> None:
         """
         Test that GithubOrgClient.org returns the correct value.
         """
@@ -49,7 +49,7 @@ class TestGithubOrgClient(unittest.TestCase):
         expected_url = f"https://api.github.com/orgs/{org_name}"
         mock_get_json.assert_called_once_with(expected_url)
 
-    def test_public_repos_url(self):
+    def test_public_repos_url(self) -> None:
         """
         Test the _public_repos_url property by mocking the 'org' property.
         """
@@ -63,7 +63,7 @@ class TestGithubOrgClient(unittest.TestCase):
         self.assertEqual(result, known_payload["repos_url"])
 
     @patch('client.get_json')
-    def test_public_repos(self, mock_get_json):
+    def test_public_repos(self, mock_get_json: Mock) -> None:
         """
         Test public_repos by mocking _public_repos_url and get_json.
         """
@@ -88,7 +88,10 @@ class TestGithubOrgClient(unittest.TestCase):
         ({"license": {"key": "my_license"}}, "my_license", True),
         ({"license": {"key": "other_license"}}, "my_license", False),
     ])
-    def test_has_license(self, repo, license_key, expected):
+    def test_has_license(self,
+                           repo: Dict,
+                           license_key: str,
+                           expected: bool) -> None:
         """
         Test the has_license static method with parameterized inputs.
         """
@@ -108,11 +111,17 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.get_patcher = patch("client.requests.get")
+        """
+        Set up the class by patching requests.get.
+        """
+        cls.get_patcher = patch("requests.get")
         cls.mock_get = cls.get_patcher.start()
 
         def side_effect(url):
-            if url.endswith("/orgs/google"):
+            """
+            Returns a mock response based on the URL.
+            """
+            if url == cls.org_payload["url"]:
                 return Mock(json=lambda: cls.org_payload)
             if url == cls.org_payload["repos_url"]:
                 return Mock(json=lambda: cls.repos_payload)
@@ -127,14 +136,14 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
         """
         cls.get_patcher.stop()
 
-    def test_public_repos(self):
+    def test_public_repos(self) -> None:
         """
         Integration test for the public_repos method.
         """
         client = GithubOrgClient("google")
         self.assertEqual(client.public_repos(), self.expected_repos)
 
-    def test_public_repos_with_license(self):
+    def test_public_repos_with_license(self) -> None:
         """
         Integration test for public_repos with a license filter.
         """

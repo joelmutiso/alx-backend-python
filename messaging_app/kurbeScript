@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Start the cluster (checks if running or starts it)
+minikube start
+
+# Display cluster info
+kubectl cluster-info
+
+# List available pods
+kubectl get pods

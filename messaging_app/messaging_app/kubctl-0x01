@@ -1,0 +1,23 @@
+#!/bin/bash
+
+kubectl scale deployment messaging-app-deployment --replicas=3
+
+echo "Waiting for pods to scale..."
+sleep 5
+kubectl get pods
+
+echo "Setting up port-forwarding for load testing..."
+
+kubectl port-forward service/messaging-app-service 8080:80 > /dev/null 2>&1 &
+
+PF_PID=$!
+
+sleep 2
+
+echo "Starting load test on http://127.0.0.1:8080"
+
+wrk -t2 -c10 -d10s http://127.0.0.1:8080
+
+kill $PF_PID
+
+kubectl top pods

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# 1. Apply the Blue Deployment (Current Version)
+kubectl apply -f blue_deployment.yaml
+
+# 2. Apply the Green Deployment (New Version)
+kubectl apply -f green_deployment.yaml
+
+# 3. Apply the Service (Currently pointing to Blue)
+kubectl apply -f kubeservice.yaml
+
+# 4. Wait a moment for Green to start
+echo "Waiting for Green deployment to start..."
+sleep 5
+
+# 5. Check logs for the new Green version to ensure no errors
+# We filter logs by the label "version=green"
+echo "Checking logs for Green deployment:"
+kubectl logs -l version=green --tail=20

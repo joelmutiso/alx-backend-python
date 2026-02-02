@@ -1,37 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: messaging-app-blue  
+  name: messaging-app-deployment
   labels:
     app: messaging-app
-    version: blue           
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: messaging-app
-      version: blue          
   template:
     metadata:
       labels:
         app: messaging-app
-        version: blue        
     spec:
       containers:
       - name: messaging-app
-        image: messaging_app-web:latest
-        imagePullPolicy: Never
+        image: messaging_app-web:latest  
+        imagePullPolicy: Never            
         ports:
         - containerPort: 8000
         env:
         - name: MYSQL_HOST
-          value: "mysql-service"
+          value: "mysql-service"         
         - name: MYSQL_USER
           valueFrom:
             secretKeyRef:
               name: mysql-pass
               key: username
-              optional: true            
+              optional: true             
 
 ---
 

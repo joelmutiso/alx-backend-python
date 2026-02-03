@@ -1,0 +1,55 @@
+name: Django CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    # This creates a temporary MySQL database for testing
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: messaging_db
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r messaging_app/requirements.txt
+        pip install pytest pytest-cov
+        
+    - name: Run Tests
+      # We inject environment variables to tell Django to use our test DB
+      env:
+        DJANGO_ENV: development
+        DB_NAME: messaging_db
+        DB_USER: root
+        DB_PASSWORD: password
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        SECRET_KEY: test_secret_key_for_github_actions
+      run: |
+        cd messaging_app
+        # Run pytest
+        pytest

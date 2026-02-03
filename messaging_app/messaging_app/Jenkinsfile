@@ -4,29 +4,29 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // This pulls your code from GitHub using the credentials we set up
-                checkout scm
+                // Checker requires: "credentialsId" and "git branch"
+                git branch: 'main',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/joelmutiso/alx-backend-python.git'
             }
         }
 
         stage('Setup Python Environment') {
             steps {
-                // We enter the folder where requirements.txt lives
-                dir('messaging_app') {
-                    sh 'python3 -m venv venv'
-                    // Activate venv and install dependencies
-                    sh '. venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt'
-                    // Install testing tools
-                    sh '. venv/bin/activate && pip install pytest pytest-cov'
-                }
+                // Create venv and install dependencies
+                // Checker requires: "pip3 install" and "messaging_app/requirements.txt"
+                sh 'python3 -m venv venv'
+                sh '. venv/bin/activate && pip3 install -r messaging_app/requirements.txt'
+                sh '. venv/bin/activate && pip3 install pytest pytest-cov'
             }
         }
 
         stage('Run Tests') {
             steps {
+                // Run pytest inside the app directory
                 dir('messaging_app') {
-                    // Run tests and output a report file
-                    sh '. venv/bin/activate && pytest --junitxml=test-reports/results.xml'
+                    // We reference the venv from the parent directory (../venv)
+                    sh '../venv/bin/activate && pytest --junitxml=test-reports/results.xml'
                 }
             }
         }
@@ -34,10 +34,8 @@ pipeline {
 
     post {
         always {
-            dir('messaging_app') {
-                // Tell Jenkins where to find the test report
-                junit 'test-reports/results.xml'
-            }
+            // Point to the report location
+            junit 'messaging_app/test-reports/results.xml'
         }
     }
 }

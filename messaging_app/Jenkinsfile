@@ -23,10 +23,10 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // Run pytest inside the app directory
                 dir('messaging_app') {
-                    // We reference the venv from the parent directory (../venv)
-                    sh '../venv/bin/activate && pytest --junitxml=test-reports/results.xml'
+                    // FIX: Run the pytest executable directly. 
+                    // No need to "activate" the venv first.
+                    sh '../venv/bin/pytest --junitxml=test-reports/results.xml'
                 }
             }
         }

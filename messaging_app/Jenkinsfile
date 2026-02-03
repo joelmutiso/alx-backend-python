@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // This pulls your code from GitHub using the credentials we set up
+                checkout scm
+            }
+        }
+
+        stage('Setup Python Environment') {
+            steps {
+                // We enter the folder where requirements.txt lives
+                dir('messaging_app') {
+                    sh 'python3 -m venv venv'
+                    // Activate venv and install dependencies
+                    sh '. venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt'
+                    // Install testing tools
+                    sh '. venv/bin/activate && pip install pytest pytest-cov'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir('messaging_app') {
+                    // Run tests and output a report file
+                    sh '. venv/bin/activate && pytest --junitxml=test-reports/results.xml'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            dir('messaging_app') {
+                // Tell Jenkins where to find the test report
+                junit 'test-reports/results.xml'
+            }
+        }
+    }
+}

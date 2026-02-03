@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checker requires: "credentialsId" and "git branch"
+                git branch: 'main',
+                    credentialsId: 'github-credentials',
+                    url: 'https://github.com/joelmutiso/alx-backend-python.git'
+            }
+        }
+
+        stage('Setup Python Environment') {
+            steps {
+                // Create venv and install dependencies
+                // Checker requires: "pip3 install" and "messaging_app/requirements.txt"
+                sh 'python3 -m venv venv'
+                sh '. venv/bin/activate && pip3 install -r messaging_app/requirements.txt'
+                sh '. venv/bin/activate && pip3 install pytest pytest-cov'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                // Run pytest inside the app directory
+                dir('messaging_app') {
+                    // We reference the venv from the parent directory (../venv)
+                    sh '../venv/bin/activate && pytest --junitxml=test-reports/results.xml'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Point to the report location
+            junit 'messaging_app/test-reports/results.xml'
+        }
+    }
+}

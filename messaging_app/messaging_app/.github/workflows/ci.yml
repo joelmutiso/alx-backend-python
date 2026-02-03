@@ -10,7 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
-    # This creates a temporary MySQL database for testing
     services:
       mysql:
         image: mysql:8.0
@@ -37,10 +36,17 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r messaging_app/requirements.txt
-        pip install pytest pytest-cov
+        # Task 3: Install flake8 and coverage tools
+        pip install pytest pytest-cov flake8
         
-    - name: Run Tests
-      # We inject environment variables to tell Django to use our test DB
+    - name: Lint with Flake8
+      run: |
+        # Task 3: Run flake8 and fail if there are errors
+        # We check the messaging_app directory
+        flake8 messaging_app --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 messaging_app --count --max-line-length=120 --statistics
+        
+    - name: Run Tests with Coverage
       env:
         DJANGO_ENV: development
         DB_NAME: messaging_db
@@ -48,8 +54,15 @@ jobs:
         DB_PASSWORD: password
         DB_HOST: 127.0.0.1
         DB_PORT: 3306
-        SECRET_KEY: test_secret_key_for_github_actions
+        SECRET_KEY: test_secret_key
       run: |
         cd messaging_app
-        # Run pytest
-        pytest
+        # Task 3: Run pytest with coverage report
+        pytest --cov=. --cov-report=xml
+        
+    - name: Upload Coverage Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        # Task 3: Upload the generated report
+        path: messaging_app/coverage.xml

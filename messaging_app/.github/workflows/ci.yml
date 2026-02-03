@@ -1,0 +1,68 @@
+name: Django CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: messaging_db
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r messaging_app/requirements.txt
+        # Task 3: Install flake8 and coverage tools
+        pip install pytest pytest-cov flake8
+        
+    - name: Lint with Flake8
+      run: |
+        # Task 3: Run flake8 and fail if there are errors
+        # We check the messaging_app directory
+        flake8 messaging_app --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 messaging_app --count --max-line-length=120 --statistics
+        
+    - name: Run Tests with Coverage
+      env:
+        DJANGO_ENV: development
+        DB_NAME: messaging_db
+        DB_USER: root
+        DB_PASSWORD: password
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        SECRET_KEY: test_secret_key
+      run: |
+        cd messaging_app
+        # Task 3: Run pytest with coverage report
+        pytest --cov=. --cov-report=xml
+        
+    - name: Upload Coverage Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        # Task 3: Upload the generated report
+        path: messaging_app/coverage.xml

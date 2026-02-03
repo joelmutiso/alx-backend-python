@@ -1,10 +1,15 @@
 pipeline {
     agent any
 
+    environment {
+        // Define your image name here to keep things clean
+        DOCKER_IMAGE = 'joelmutiso/messaging_app:latest'
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                // Checker requires: "credentialsId" and "git branch"
                 git branch: 'main',
                     credentialsId: 'github-credentials',
                     url: 'https://github.com/joelmutiso/alx-backend-python.git'
@@ -13,8 +18,6 @@ pipeline {
 
         stage('Setup Python Environment') {
             steps {
-                // Create venv and install dependencies
-                // Checker requires: "pip3 install" and "messaging_app/requirements.txt"
                 sh 'python3 -m venv venv'
                 sh '. venv/bin/activate && pip3 install -r messaging_app/requirements.txt'
                 sh '. venv/bin/activate && pip3 install pytest pytest-cov'
@@ -23,10 +26,29 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // Run pytest inside the app directory
                 dir('messaging_app') {
-                    // We reference the venv from the parent directory (../venv)
-                    sh '../venv/bin/activate && pytest --junitxml=test-reports/results.xml'
+                    // Run the tests
+                    sh '../venv/bin/pytest --junitxml=test-reports/results.xml'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('messaging_app') {
+                    // Build the image using the Dockerfile in the current directory
+                    sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                // Log in to Docker Hub using the credentials we created
+                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                    // Push the image
+                    sh "docker push ${DOCKER_IMAGE}"
                 }
             }
         }
@@ -34,8 +56,15 @@ pipeline {
 
     post {
         always {
-            // Point to the report location
-            junit 'messaging_app/test-reports/results.xml'
+            // Check if report exists before archiving to avoid errors
+            script {
+                if (fileExists('messaging_app/test-reports/results.xml')) {
+                    junit 'messaging_app/test-reports/results.xml'
+                }
+            }
+            // Cleanup: Logout from Docker and remove the image to save space
+            sh 'docker logout'
+            sh "docker rmi ${DOCKER_IMAGE} || true"
         }
     }
 }
